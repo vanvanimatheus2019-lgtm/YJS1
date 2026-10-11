@@ -738,7 +738,7 @@
   <div class="wrap">
     <div class="stats" data-stagger>
       <div class="card stat">
-        <div class="stat-k"><span>CERTS</span><span class="tag t-s">可查原图</span></div>
+        <div class="stat-k"><span>CERTS</span><span class="tag t-s">可查证书</span></div>
         <div class="stat-n"><span data-count="28">28</span>+<small>项</small></div>
         <div class="stat-l">AI 应用类课程认证</div>
         <div class="stat-s">阿里达摩院 · 科大讯飞 · 华为云 · Datawhale</div>
@@ -783,8 +783,8 @@
 
     <div class="about">
       <aside class="card idc rv" aria-label="个人概况">
-        <button class="idc-photo" type="button" data-lb="me" data-src="yjs.jpg" data-cap="于金硕" aria-label="查看照片大图">
-          <img src="yjs.jpg" alt="于金硕的照片" loading="lazy" decoding="async" />
+        <button class="idc-photo" type="button" data-lb="me" data-src="img/me.jpg" data-cap="于金硕" aria-label="查看照片大图">
+          <img src="img/me.jpg" data-fallback="yjs.jpg" alt="于金硕的照片" loading="lazy" decoding="async" />
           <span class="idc-cap"><span>ID · YJS-2026</span><span>SCAN OK</span></span>
         </button>
         <div class="idc-b">
@@ -1120,8 +1120,8 @@
         <div class="pj-head"><span class="tag t-m">线上可访问</span><span class="pj-kicker">2026 暑假起 · 从零开始的第一批作品</span></div>
         <h3>这个网站，和一个能在电脑上玩的坦克小游戏</h3>
         <p class="pj-one">从几乎零基础开始学 AI、提示词和编程时做的，之后一直在迭代。办法只有一个：先找一个具体问题，试着解决；遇到不会的，再去学。</p>
-        <button class="shot" type="button" data-lb="tank" data-src="tank.jpg" data-cap="坦克小游戏运行画面" aria-label="查看坦克小游戏截图">
-          <img src="tank.jpg" alt="坦克小游戏运行画面" loading="lazy" decoding="async" />
+        <button class="shot" type="button" data-lb="tank" data-src="img/tank.jpg" data-cap="坦克小游戏运行画面" aria-label="查看坦克小游戏截图">
+          <img src="img/tank.jpg" data-fallback="tank.jpg" alt="坦克小游戏运行画面" loading="lazy" decoding="async" />
         </button>
         <ul class="pts">
           <li>原生 HTML / CSS / JavaScript，无框架、无外部依赖</li>
@@ -1264,7 +1264,7 @@
 
     <div class="card certs-box rv">
       <div class="certs-h">
-        <h3>AI 应用类认证 · 21 张原图</h3>
+        <h3>AI 应用类认证 · 21 张证书</h3>
         <span class="fine">点击任意一张放大，支持 ← → 键与左右滑动</span>
       </div>
       <div class="certs" id="certGrid"></div>
@@ -1776,25 +1776,27 @@ $$('.sk .card').forEach(card => {
   });
 });
 
-/* ---------- 14. 证书：缩略图按需加载（原图很大，先只载入第一屏）+ 清单分类 ---------- */
+/* ---------- 14. 证书：缩略图按需加载 + 清单分类 ----------
+   格子里用压缩后的缩略图 img/cert-NN-s.jpg，点开看 img/cert-NN.jpg；
+   万一 img 文件夹没传上去，就退回仓库里的原图 证书N.png。 */
 const CERT_N = 21, CERT_FIRST = 8, CERT_EXT = { 11: 'jpg' }, certGrid = $('#certGrid');
 function certLoad(b) {
   if ($('img', b)) return;
-  const img = new Image(), tries = ['png', 'jpg', 'jpeg'].filter(x => !b.dataset.src.endsWith('.' + x));
-  img.loading = 'lazy'; img.decoding = 'async'; img.alt = b.dataset.cap;
+  const img = new Image();
+  img.decoding = 'async'; img.alt = b.dataset.cap;
   img.onload = () => b.classList.add('ok');
   img.onerror = () => {
-    const ext = tries.shift();
-    if (ext) { b.dataset.src = b.dataset.src.replace(/\.\w+$/, '.' + ext); img.src = b.dataset.src; }
+    if (b.dataset.legacy) { b.dataset.src = img.src = b.dataset.legacy; delete b.dataset.legacy; }
     else { img.remove(); b.classList.add('miss'); b.removeAttribute('data-lb'); }
   };
-  img.src = b.dataset.src;
+  img.src = b.dataset.thumb;
   b.prepend(img);
 }
 for (let i = 1; i <= CERT_N; i++) {
-  const b = document.createElement('button');
+  const b = document.createElement('button'), nn = String(i).padStart(2, '0');
   b.type = 'button'; b.className = 'cert';
-  b.dataset.lb = 'cert'; b.dataset.src = `证书${i}.${CERT_EXT[i] || 'png'}`; b.dataset.cap = `AI 应用类认证 · 证书 #${i}`;
+  b.dataset.lb = 'cert'; b.dataset.src = `img/cert-${nn}.jpg`; b.dataset.thumb = `img/cert-${nn}-s.jpg`; b.dataset.legacy = `证书${i}.${CERT_EXT[i] || 'png'}`;
+  b.dataset.cap = `AI 应用类认证 · 证书 #${i}`;
   b.setAttribute('aria-label', `查看证书 ${i}`);
   b.innerHTML = `<span class="cert-n">#${String(i).padStart(2, '0')}</span>`;
   if (i > CERT_FIRST) b.hidden = true;
@@ -1853,10 +1855,16 @@ document.addEventListener('keydown', e => {
 let lbTx = 0;
 lb.addEventListener('touchstart', e => { lbTx = e.touches[0].clientX; }, { passive: true });
 lb.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - lbTx; if (Math.abs(dx) > 50 && lbList.length > 1) lbShow(lbIdx + (dx < 0 ? 1 : -1)); }, { passive: true });
-/* 图片缺失时的降级 */
+/* 图片缺失时的降级：压缩图加载不到就先退回仓库里的原图，原图也没有才隐藏 */
 $$('.idc-photo img, .shot img').forEach(img => {
-  const miss = () => { const p = img.parentElement; if (!p) return; img.remove(); p.classList.add('miss'); p.removeAttribute('data-lb'); p.style.cursor = 'default'; };
-  if (img.complete && !img.naturalWidth && img.currentSrc) miss(); else img.addEventListener('error', miss);
+  const miss = () => {
+    const p = img.parentElement, f = img.dataset.fallback;
+    if (!p) return;
+    if (f) { img.removeAttribute('data-fallback'); p.dataset.src = f; img.src = f; return; }
+    img.remove(); p.classList.add('miss'); p.removeAttribute('data-lb'); p.style.cursor = 'default';
+  };
+  img.addEventListener('error', miss);
+  if (img.complete && !img.naturalWidth && img.currentSrc) miss();
 });
 
 /* ---------- 16. 背景音乐：手动开启，不自动播放 ---------- */
