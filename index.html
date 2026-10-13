@@ -41,7 +41,7 @@
       --line: rgba(var(--acc-rgb), .14); --line2: rgba(var(--acc-rgb), .32);
       --mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", "PingFang SC", "Microsoft YaHei", monospace;
       --sans: "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
-      --cut: 14px; --wrap: 1180px; --hd: 58px;
+      --cut: 14px; --wrap: 1180px; --hd: 58px; --gut: 20px;
       --ease: cubic-bezier(.2, .8, .2, 1);
       color-scheme: dark;
     }
@@ -57,7 +57,8 @@
     ul, ol { list-style: none; }
     h1, h2, h3, h4 { font-weight: 800; line-height: 1.3; }
     :focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
-    .wrap { width: min(var(--wrap), 100% - 40px); margin-inline: auto; }
+    .wrap { width: min(var(--wrap), 100% - var(--gut) * 2); margin-inline: auto; }
+    a, button, summary { -webkit-tap-highlight-color: transparent; }
     .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
     /* 背景：网格 + 两团冷光 + 暗角；最上面盖一层扫描线 */
@@ -562,14 +563,33 @@
     .cmd-ft { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 9px 16px; border-top: 1px solid var(--line); font: 500 11px var(--mono); color: var(--dim); }
 
     /* ==================== 14. 响应式 ==================== */
+    /* 折叠块：宽屏始终展开、不显示开关；手机端默认收起（脚本在加载时合上） */
+    .fold > summary { display: none; }
+    .dock, .snap-ind { display: none; }
+    /* 触屏没有悬停：去掉会“粘住”的悬停聚光，换成按下时的反馈 */
+    @media (hover: none) {
+      .card:hover::before { opacity: 0; }
+      .card:hover::after { opacity: .5; }
+      .btn:active, .fl:active, .skill:active, .segc button:active, .pipe button:active, .rp-btn:active, .ib:active, .dock a:active { transform: scale(.96); }
+    }
     @media (max-width: 1080px) {
       .dlv, .prs, .stats { grid-template-columns: repeat(2, 1fr); }
       .bugs { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 960px) {
+      /* 首屏改成：名字 → 机械臂 → 终端与简介，第一眼就能看到会动的东西 */
+      .hero { min-height: 0; padding-top: calc(var(--hd) + 16px); }
       .hero-in { grid-template-columns: 1fr; gap: 0; }
-      .hero-txt { padding-bottom: 8px; }
-      .hero-stage { min-height: 470px; }
+      .hero-txt { display: contents; }
+      .eyebrow { order: 1; justify-self: start; }
+      .name { order: 2; }
+      .hero-en { order: 3; }
+      .hero-stage { order: 4; min-height: 440px; min-height: clamp(380px, 54svh, 480px); margin-top: 8px; touch-action: pan-y; }
+      .hint { order: 5; margin-top: 10px; max-width: none; }
+      .term { order: 6; margin: 20px 0 16px; max-width: none; }
+      .hero-desc { order: 7; max-width: none; }
+      .cta { order: 8; margin-bottom: 30px; }
+      #arm { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent); }
       /* 窄屏：遥测面板改成贴底的一条横带，不挡机械臂 */
       .hud { left: 0; right: 0; top: auto; bottom: 0; min-width: 0; }
       .hud dl { grid-template-columns: auto 1fr auto 1fr; gap: 0 12px; }
@@ -584,10 +604,51 @@
       .cl { grid-template-columns: repeat(2, 1fr); }
       .certs { grid-template-columns: repeat(3, 1fr); }
     }
+    @media (max-width: 720px) {
+      /* 多张并排的卡片改成横向滑动：一屏一张，露出下一张的边 */
+      .snap { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding: 2px var(--gut) 4px; scroll-padding-inline: var(--gut); }
+      .snap::-webkit-scrollbar { display: none; }
+      .snap > * { flex: 0 0 84%; scroll-snap-align: start; }
+      .js .snap > .rv { opacity: 1; transform: none; transition: border-color .3s; }
+      .adv.snap { margin-left: 0; padding-left: 0; scroll-padding-left: 0; }
+      .snap-ind { display: flex; align-items: center; gap: 10px; margin-top: 10px; font: 600 10.5px var(--mono); letter-spacing: .1em; color: var(--dim); }
+      .snap-ind b { color: var(--acc); font-weight: 600; }
+      .snap-ind .bar i { transition: width .25s var(--ease); }
+      /* 长段落默认收起 */
+      .fold > summary { display: block; cursor: pointer; list-style: none; font: 600 13px var(--mono); color: var(--blue); padding: 2px 0; }
+      .fold > summary::-webkit-details-marker { display: none; }
+      .fold > summary::before { content: "[+] "; white-space: pre; }
+      .fold[open] > summary::before { content: "[-] "; }
+      .fold[open] > summary { margin-bottom: 8px; }
+      .story .fold { margin-bottom: 14px; }
+      /* 底部快捷导航：滚过首屏后滑出来 */
+      .dock { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; padding-bottom: env(safe-area-inset-bottom, 0px); border-top: 1px solid var(--line2); background: #04090b; box-shadow: 0 -10px 24px rgba(0, 0, 0, .5); transform: translateY(110%); transition: transform .35s var(--ease); }
+      .dock.show { transform: none; }
+      .dock a { position: relative; display: grid; justify-items: center; gap: 1px; padding: 8px 0 9px; font: 700 12.5px var(--sans); color: var(--mute); transition: color .2s, transform .15s; }
+      .dock a i { font: 600 9.5px var(--mono); font-style: normal; color: var(--dim); transition: color .2s; }
+      .dock a.on, .dock a.on i { color: var(--acc); }
+      .dock a.on::before { content: ""; position: absolute; top: -1px; left: 24%; right: 24%; height: 2px; background: var(--acc); box-shadow: 0 0 10px var(--acc); }
+      .totop { right: 12px; bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+      .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+      .ft { padding-bottom: 96px; }
+      /* 手机上关掉最吃性能的几样：毛玻璃和扫描光束 */
+      .hd.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(4, 7, 10, .96); }
+      .hud { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(3, 8, 10, .86); }
+      .scan::after { display: none; }
+    }
     @media (max-width: 560px) {
+      :root { --gut: 16px; }
       body { font-size: 15px; }
-      .wrap { width: calc(100% - 32px); }
-      .sec { padding-top: 84px; }
+      .sec { padding-top: 66px; }
+      .sec-h { margin-bottom: 24px; }
+      .sec-h::after { margin-top: 18px; }
+      .sub-h { margin: 36px 0 12px; font-size: 19px; flex-wrap: wrap; gap: 4px 10px; }
+      .eyebrow { font-size: 11px; padding: 6px 10px; }
+      .eyebrow b, .eyebrow .sep { display: none; }
+      .name { font-size: clamp(64px, 21vw, 96px); margin: 12px 0 8px; }
+      .hero-en { font-size: 11px; letter-spacing: .16em; }
+      .hero-en span { display: block; margin-top: 3px; }
+      #btnPrint { display: none; }
       .card { padding: 18px; }
       .pj { padding: 20px 16px; }
       .win-b { padding: 18px 16px 20px; }
@@ -603,7 +664,7 @@
       .idc { grid-template-columns: 118px 1fr; }
       .idc-b { padding: 14px; }
       .kv div { grid-template-columns: 1fr; gap: 0; padding: 6px 0; }
-      .hero-stage { min-height: 430px; }
+      .hero-stage { min-height: 400px; min-height: clamp(340px, 50svh, 430px); }
       .hud { font-size: 10px; padding: 8px 10px; }
       .hud dl { gap: 0 8px; }
       .hud dd:nth-of-type(odd) { padding-right: 8px; }
@@ -624,7 +685,7 @@
     @media print {
       :root { --bg: #fff; --text: #111; --text-rgb: 17, 17, 17; --mute: #333; --dim: #666; --acc: #0a7a52; --acc-rgb: 10, 122, 82; --blue: #0b5f8a; --blue-rgb: 11, 95, 138; --line: #ccc; --line2: #999; }
       body { background: #fff; font-size: 12px; }
-      .bg, .scan, .progress, #fx, #arm, .hd, .music, .totop, .toast, .ret, .cmd, .rail, .marq, .hero-stage, .hint, .filters, .certs, .certs-more, .box-ctl, .rp-ctl { display: none !important; }
+      .bg, .scan, .progress, #fx, #arm, .hd, .music, .totop, .toast, .ret, .cmd, .rail, .marq, .hero-stage, .hint, .filters, .certs, .certs-more, .box-ctl, .rp-ctl, .dock, .snap-ind { display: none !important; }
       .hero { min-height: 0; padding-top: 10px; }
       .name { font-size: 46px; color: #111; text-shadow: none; }
       .card { clip-path: none; background: #fff; break-inside: avoid; }
@@ -805,8 +866,10 @@
         <div class="win-bar"><i></i><i></i><i></i><span>about.md</span></div>
         <div class="win-b story">
           <p>我是于金硕，北京工业大学机械类本科生。方向很明确：<strong>物理 AI 与具身智能机器人</strong>——让机器不只会算，还能在真实世界里动起来。机械工程和数理基础是我正在打的底子，AI 应用是我现在最顺手的工具。</p>
+          <details class="fold" open><summary>展开：那个暑假发生了什么</summary>
           <p>高中毕业后的那个暑假，我想验证一件事：<strong>学过的东西，能不能讲明白、真的帮到别人。</strong>于是给 3 名高中生做理科家教，最忙的几天把课排到了 12 小时；也送过外卖，做校园合伙人卖过数码产品，连家教也得自己去推销，知道了挣钱的重量，学着和人打交道。</p>
           <p>同一个暑假，我从几乎零基础开始接触 AI、提示词和编程。一开始也被 Loop、API、MCP、RAG 这些名词裹挟过，后来发现办法很简单：<strong>先找一个具体问题，试着解决；遇到不会的，再去学。</strong>这个网站和一个坦克小游戏，就是这么做出来的。</p>
+          </details>
           <p>入学一个多月，我把三个竞赛项目都做到了能验证的程度：Agent 上线，数据叙事上线，仿真机器鱼定稿。我是 ESTP，行动快、目标感强、扛得住压；做事的规矩只有一条：<strong>先诊断，再动手，用结果说话。</strong></p>
           <blockquote>可以失败，但别停下来。</blockquote>
         </div>
@@ -814,7 +877,7 @@
     </div>
 
     <h3 class="sub-h rv"><span>// DELIVERABLES</span>我能交付什么</h3>
-    <div class="dlv" data-stagger>
+    <div class="dlv snap" data-stagger>
       <div class="card dv">
         <span class="dv-n">D / 01</span>
         <h3>从 0 到 1 做出能打开的网页</h3>
@@ -876,7 +939,7 @@
           <li>参加京津冀秋招双选会并主动投递，先后和 13 位企业 HR 聊过实习（AI 自研与前端方向）；回来对照硕士学长的简历找差距。</li>
           <li>向学校创客空间提交了 OPC（一人公司）入驻答辩。</li>
         </ul>
-        <div class="adv" data-stagger>
+        <div class="adv snap" data-stagger>
           <div class="card"><small>老师说</small><p>先把机械专业基础打牢，培养科研兴趣，持续积累后再争取进课题组。</p></div>
           <div class="card"><small>HR 说</small><p>优先了解自主研发型企业，关注产品和技术从 0 到 1 搭建的全过程。</p></div>
           <div class="card"><small>HR 说</small><p>大厂实习给履历背书和方向聚焦，中小企业给更广的实战；我被推荐往 FDE 方向走。</p></div>
@@ -890,7 +953,7 @@
     </div>
 
     <h3 class="sub-h rv"><span>// BUG LOG</span>踩过的坑，和现在的规矩</h3>
-    <div class="bugs" id="bugs" data-stagger>
+    <div class="bugs snap" id="bugs" data-stagger>
       <article class="card bug">
         <div class="bug-id"><span>#01 · 暑假学 AI</span><span class="bug-st"></span></div>
         <h4>被一堆名词吓住</h4>
@@ -979,13 +1042,13 @@
         <div>
           <dl class="psr">
             <div><dt>问题</dt><dd>评委只看三件事：能不能<b>抓主要矛盾、给量化依据、出可执行建议</b>。而实测暴露出示例数据和上传数据混在一起、只能分析当天。</dd></div>
-            <div><dt>做法</dt><dd>
+            <div><dt>做法</dt><dd><details class="fold" open><summary>展开 4 步做法</summary>
               <ol>
                 <li><b>先修数据，再谈智能。</b>上传即替换示例，并写清用了哪些表、多少行、哪段日期。</li>
                 <li><b>主要矛盾必须可比较。</b>客流、断货、差评单位不同，统一换算成“每周影响金额”才能排出第一名。</li>
                 <li><b>程序算、模型说、程序验。</b>金额和保本线由程序算，模型只按固定结构表达，最后程序再核验数字。</li>
                 <li><b>主动交代局限。</b>数据天数不够、没有进价、用的是示例数据，都自动写进“前提与风险”。</li>
-              </ol>
+              </ol></details>
             </dd></div>
             <div><dt>结果</dt><dd>双 Agent 网站已部署到云端；接入 14 个公开来源、38 条事实和 35 万行中国匿名生鲜评估记录；核验模块在测试中抓出了故意编造的数字。</dd></div>
             <div><dt>边界</dt><dd>目前用的是模拟门店数据和公开数据，还没有真实门店试点。</dd></div>
@@ -1020,13 +1083,13 @@
         <div>
           <dl class="psr">
             <div><dt>问题</dt><dd>导师反馈“不够震撼、看不出过程、看不出现在多好、人物只有履历”；复审还发现首屏地名标错了。</dd></div>
-            <div><dt>做法</dt><dd>
+            <div><dt>做法</dt><dd><details class="fold" open><summary>展开 4 步做法</summary>
               <ol>
                 <li><b>正确是底线。</b>先纠错再做别的；每个数字查原文，查不到的不用。</li>
                 <li><b>让算法定分界。</b>对 40 年序列做三段拟合，事件只标时间，不写成原因。</li>
                 <li><b>两条路径交叉验证。</b>序列均值与变化图解码对上了，才写“69% 的面积 NDVI 上升超过 0.1”。</li>
                 <li><b>用数据挑证据。</b>5 个候选窗口并排比较，选定横山以北（NDVI 0.158 → 0.482）。</li>
-              </ol>
+              </ol></details>
             </dd></div>
             <div><dt>结果</dt><dd>两天 7 轮迭代；32 项测试通过，数字审计 50/50；上线后逐文件比对哈希，查出一个只在线上出现的预加载问题。</dd></div>
             <div><dt>边界</dt><dd>团队作品，与 AI 协作完成。</dd></div>
@@ -1084,13 +1147,13 @@
         <div>
           <dl class="psr">
             <div><dt>问题</dt><dd>鱼长 240 mm，却要以 16° 斜穿 150 mm 的门；“后退脱困”逻辑还会让它原地死循环。<b>调 PID 解决不了几何问题。</b></dd></div>
-            <div><dt>做法</dt><dd>
+            <div><dt>做法</dt><dd><details class="fold" open><summary>展开 4 步做法</summary>
               <ol>
                 <li><b>先诊断。</b>从逐帧日志反推卡点，发现规则文档里的柱子坐标与平台实际不一致，鱼的有效宽度也比标称大。</li>
                 <li><b>改路线，不硬调参数。</b>加辅助圆让穿门段变成水平直线，再做入圈限速、去掉帮倒忙的护柱转向。</li>
                 <li><b>追问“到顶了”的前提。</b>读懂平台对受力和裁判的实现后，发现推力来自尾鳍“怎么摆”而不是“偏多少”，于是改用方波摆尾、前馈查表、出圈慢撤偏置。</li>
                 <li><b>把实测自动化。</b>免鼠标一轮约 27 秒，两天跑了约 170 轮，才看得出分布而不是运气。</li>
-              </ol>
+              </ol></details>
             </dd></div>
             <div><dt>结果</dt><dd>v04：14 轮里 13 轮落在 15.39–15.43 s，零卡死。v10：15 轮（含人为丢开头 1–3 帧的扰动测试）全部干净完成，<b>14.53–14.59 s</b>。</dd></div>
             <div><dt>边界</dt><dd>这是本机平台实测，不是比赛名次；控制代码与 AI 协作完成。</dd></div>
@@ -1169,7 +1232,7 @@
 
     <p class="creed" id="creed" aria-label="不被情绪推着走，也不等到万无一失；看证据和代价，选可承受的一步，用结果校准下一步。">不被情绪推着走，也不等到万无一失；看证据和代价，选可承受的一步，用结果校准下一步。</p>
 
-    <div class="prs" data-stagger>
+    <div class="prs snap" data-stagger>
       <div class="card prc"><span class="prc-n">P / 01</span><h3>先诊断，再动手</h3><p>卡死的根因是路线几何，调参数解决不了；凭印象改稿一定会漏，要逐句做对比。</p><div class="src"><span class="chip">仿真鱼</span><span class="chip">绿进沙退</span></div></div>
       <div class="card prc"><span class="prc-n">P / 02</span><h3>程序算、模型说、程序验</h3><p>让“回答好不好”不再依赖大模型临场发挥：计算和核验交给程序，表达交给模型。</p><div class="src"><span class="chip">门店副驾</span></div></div>
       <div class="card prc"><span class="prc-n">P / 03</span><h3>单轮好成绩不算数</h3><p>对参数敏感的系统里，单轮结果一半是运气。判据是同配置多轮，加上人为扰动全部通过。</p><div class="src"><span class="chip">仿真鱼 v10</span></div></div>
@@ -1186,7 +1249,7 @@
       <h2><span class="no">05</span>能力矩阵</h2>
       <p class="sec-sub">四个方向，每一项都对应一件做完的事。点一下技能，看它的证据。</p>
     </div>
-    <div class="sk" data-stagger>
+    <div class="sk snap" data-stagger>
       <div class="card">
         <div class="sk-h"><h3>AI 与大模型应用工程</h3><span>SK / 01</span></div>
         <p class="sk-p">熟悉提示词工程与 Agent 工作流搭建，能把工具调用和数字核验接进真实项目。</p>
@@ -1318,7 +1381,7 @@
       <h2><span class="no">07</span>场外</h2>
       <p class="sec-sub">精力是一切的前提。</p>
     </div>
-    <div class="life" data-stagger>
+    <div class="life snap" data-stagger>
       <div class="card lf">
         <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 12v8M8 9v14M24 9v14M28 12v8M8 16h16"/></svg>
         <h3>力量训练</h3><p>坚持力量与体能训练，给高强度的学习和项目留足精力。</p>
@@ -1357,6 +1420,10 @@
 </footer>
 
 <!-- ==================== 浮动控件 ==================== -->
+<!-- 手机端底部快捷导航（宽屏不显示） -->
+<nav class="dock" id="dock" aria-label="快捷导航">
+  <a href="#about"><i>01</i>关于</a><a href="#growth"><i>02</i>成长</a><a href="#projects"><i>03</i>项目</a><a href="#skills"><i>05</i>能力</a><a href="#contact"><i>→</i>联系</a>
+</nav>
 <button class="totop" type="button" id="totop" aria-label="返回顶部"><svg class="ic"><use href="#i-up"/></svg></button>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="ret" id="ret" aria-hidden="true"><i></i></div>
@@ -1384,6 +1451,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const root = document.documentElement;
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const FINE = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const PHONE = matchMedia('(max-width: 720px)').matches;   /* 手机宽度：卡片横滑、长段落收起、底部导航 */
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const cssv = n => getComputedStyle(root).getPropertyValue(n).trim();
@@ -1450,6 +1518,8 @@ function spark(x, y) {
 fxFit();
 addEventListener('resize', fxFit);
 if (!RM) addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) spark(e.clientX, e.clientY); });
+/* 触屏用 click 触发火花：手指滑动滚屏时不会乱冒 */
+if (!RM && !FINE) addEventListener('click', e => { if (e.clientX || e.clientY) spark(e.clientX, e.clientY); });
 
 /* ---------- 3. 复制邮箱 / 打招呼 / 打印 / 时钟 ---------- */
 const EMAIL = 'y15201369835@qq.com';
@@ -1481,7 +1551,7 @@ const tickClock = () => { clock.textContent = new Date().toTimeString().slice(0,
 tickClock(); setInterval(tickClock, 1000);
 
 /* ---------- 4. 滚动：进度条、顶栏、返回顶部、时间线填充、信条逐字点亮 ---------- */
-const hd = $('#hd'), progress = $('#progress'), totop = $('#totop'), tl = $('#tl'), tlFill = $('#tlFill'), creed = $('#creed'), railS = $('#railS');
+const hd = $('#hd'), progress = $('#progress'), totop = $('#totop'), tl = $('#tl'), tlFill = $('#tlFill'), creed = $('#creed'), railS = $('#railS'), dock = $('#dock');
 const creedText = creed.textContent.trim();
 creed.textContent = '';
 const creedChars = [...creedText].map(c => { const s = document.createElement('span'); s.textContent = c; s.setAttribute('aria-hidden', 'true'); creed.appendChild(s); return s; });
@@ -1496,6 +1566,7 @@ function onScroll() {
   railS.textContent = String(Math.round(p * 100)).padStart(3, '0');
   hd.classList.toggle('scrolled', y > 8);
   totop.classList.toggle('show', y > 700);
+  dock.classList.toggle('show', y > 420 && y < max - 40);
   const tr = tl.getBoundingClientRect();
   if (tr.bottom > 0 && tr.top < innerHeight) tlFill.style.height = Math.max(0, (tr.height - 14) * clamp((innerHeight * .62 - tr.top) / tr.height, 0, 1)) + 'px';
   const cr = creed.getBoundingClientRect();
@@ -1511,12 +1582,14 @@ const goTo = sel => { const el = $(sel); if (el) el.scrollIntoView({ behavior: R
 totop.addEventListener('click', () => scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }));
 
 /* ---------- 5. 导航：滚动高亮 + 滑块，移动端抽屉 ---------- */
-const nav = $('#nav'), ink = $('#navInk'), navLinks = $$('a', nav);
+const nav = $('#nav'), ink = $('#navInk'), navLinks = $$('a', nav), dockLinks = $$('a', dock);
+const DOCK_OF = { about: 'about', growth: 'growth', projects: 'projects', method: 'projects', skills: 'skills', edu: 'skills', life: 'contact', contact: 'contact' };
 let navCur = '';
 function setNav(id) {
   navCur = id;
   let hitLink = null;
   navLinks.forEach(a => { const on = a.getAttribute('href') === '#' + id; a.classList.toggle('on', on); if (on) hitLink = a; });
+  dockLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + DOCK_OF[id]));
   if (hitLink) { ink.style.opacity = 1; ink.style.width = hitLink.offsetWidth + 'px'; ink.style.transform = `translateX(${hitLink.offsetLeft}px)`; }
   else ink.style.opacity = 0;
 }
@@ -1568,8 +1641,31 @@ const io = new IntersectionObserver(es => es.forEach(e => {
   setTimeout(() => el.classList.remove('rv'), 3400);
 }), { threshold: [0, .12, .3] });
 $$('.rv').forEach(el => io.observe(el));
-/* 踩坑卡片：显现后依次从 OPEN 翻成 FIXED */
-$$('.bug').forEach((b, i) => b.addEventListener('reveal', () => setTimeout(() => b.classList.add('fx'), RM ? 0 : 900 + i * 260)));
+/* 踩坑卡片：显现后依次从 OPEN 翻成 FIXED（手机上是滑到哪张翻哪张） */
+$$('.bug').forEach((b, i) => b.addEventListener('reveal', () => setTimeout(() => b.classList.add('fx'), RM ? 0 : PHONE ? 600 : 900 + i * 260)));
+
+/* 手机：长段落默认收起；横滑卡片组下面加一条“第几张 / 共几张”的进度 */
+if (PHONE) {
+  $$('.fold').forEach(d => { d.open = false; });
+  $$('.snap').forEach(el => {
+    const n = el.children.length, ind = document.createElement('div');
+    ind.className = 'snap-ind'; ind.setAttribute('aria-hidden', 'true');
+    ind.innerHTML = `<span><b>01</b> / ${String(n).padStart(2, '0')}</span><div class="bar"><i></i></div><span>滑动 →</span>`;
+    el.after(ind);
+    const num = $('b', ind), bar = $('.bar i', ind), tip = ind.lastElementChild;
+    let busy = false;
+    const upd = () => {
+      busy = false;
+      const step = el.children[0].offsetWidth + 12, i = clamp(Math.round(el.scrollLeft / step), 0, n - 1);
+      const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 ? n - 1 : i;
+      num.textContent = String(end + 1).padStart(2, '0');
+      bar.style.width = (end + 1) / n * 100 + '%';
+      tip.textContent = end === n - 1 ? '← 滑回' : '滑动 →';
+    };
+    el.addEventListener('scroll', () => { if (!busy) { busy = true; requestAnimationFrame(upd); } }, { passive: true });
+    upd();
+  });
+}
 
 /* 首屏名字：先乱码解密，之后偶尔（以及悬停时）闪一下故障 */
 const heroName = $('#heroName');
@@ -1583,9 +1679,12 @@ if (!RM) {
 /* ---------- 7. 打字机：只滚动已经做完的事 ---------- */
 const typer = $('#typer');
 const WORDS = ['给小店老板做了一个会算账、能核验数字的 Agent', '用 40 年卫星影像讲清了毛乌素怎么变绿', '把一条仿真机器鱼从“撞柱卡死”调到稳定完赛', '写下 50+ 篇“现象 → 定位 → 改动 → 实测”的复盘', '主动投递，和 13 位企业 HR 聊过实习方向'];
+let heroOn = true;   /* 首屏滚出视野后，打字机先歇着，不白白触发重排 */
+new IntersectionObserver(es => { heroOn = es[0].isIntersecting; }).observe($('#hero'));
 if (!RM) {
   let w = 0, c = WORDS[0].length, del = true;
   (function loop() {
+    if (!heroOn) { setTimeout(loop, 700); return; }
     let wait = del ? 26 : 58;
     if (del) { c--; if (c <= 0) { del = false; w = (w + 1) % WORDS.length; wait = 380; } }
     else { c++; if (c >= WORDS[w].length) { del = true; wait = 2600; } }
@@ -2061,7 +2160,7 @@ btnMusic.addEventListener('click', toggleMusic);
     }
   }
   function ink(col, a, w) { ctx.strokeStyle = `rgba(${col},${a})`; ctx.lineWidth = w; ctx.stroke(); }
-  function glow(fn, col, a = 1, w = 1.3) { ctx.beginPath(); fn(); ink(col, .13 * a, w + 5); ctx.beginPath(); fn(); ink(col, .92 * a, w); }
+  function glow(fn, col, a = 1, w = 1.3) { if (!lite) { ctx.beginPath(); fn(); ink(col, .13 * a, w + 5); } ctx.beginPath(); fn(); ink(col, .92 * a, w); }
   /* 连杆：两端大小不同的方截面桁架，中间加一圈横框和两条斜撑 */
   function link(p0, p1, v, a0, a1) {
     const u = norm(sub(p1, p0)), w = cross(u, v), K = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
@@ -2090,7 +2189,8 @@ btnMusic.addEventListener('click', toggleMusic);
   const deg = v => (v < 0 ? '−' : '+') + Math.abs(v * 180 / Math.PI).toFixed(1).padStart(5, '0') + '°';
   const num = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2);
 
-  let tgt = [.75, 1.02, .75], cur = tgt.slice(), ptr = null, lastPtr = -1e9, tm = 0, parX = 0, parY = 0;
+  let tgt = [.75, 1.02, .75], cur = tgt.slice(), ptr = null, trackUntil = 0, touching = false, tm = 0, parX = 0, parY = 0;
+  let cvTop = 0, lite = false, slow = 0, tiltX = 0, tiltY = 0, hasTilt = false;
   const trail = [];
   function draw(s, lim) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2099,7 +2199,7 @@ btnMusic.addEventListener('click', toggleMusic);
     ctx.globalCompositeOperation = 'lighter';
     /* 地面：透视网格、雷达扫描、臂展范围、料位 */
     GRID.forEach((g, i) => { ctx.beginPath(); for (const e of g) seg(e[0], e[1]); ink(ACC, .04 + i * .045, 1); });
-    for (let k = 0; k < 10; k++) { const a = tm * .8 - k * .05; ctx.beginPath(); seg(O, [Math.sin(a) * 2.5, 0, Math.cos(a) * 2.5]); ink(ACC, .2 * (1 - k / 10), 1); }
+    for (let k = 0; k < (lite ? 3 : 10); k++) { const a = tm * .8 - k * .05; ctx.beginPath(); seg(O, [Math.sin(a) * 2.5, 0, Math.cos(a) * 2.5]); ink(ACC, .2 * (1 - k / 10), 1); }
     const pr = (tm * .4 % 1) * 2.6;
     ctx.beginPath(); ring(O, EX, EZ, pr, 48); ink(ACC, .22 * (1 - pr / 2.6), 1);
     ctx.setLineDash([3, 7]); ctx.beginPath(); ring(O, EX, EZ, RFLOOR, 72); ink(ACC, .34, 1); ctx.setLineDash([]);
@@ -2180,9 +2280,11 @@ btnMusic.addEventListener('click', toggleMusic);
     if (!vis) return;
     const dt = Math.min(.05, (now - last) / 1000 || .016);
     last = now; tm += dt;
-    const tracking = FINE && !!ptr && now - lastPtr < 4200;
-    parX += ((ptr ? ptr[0] / W - .5 : 0) - parX) * .04; parY += ((ptr ? ptr[1] / H - .5 : 0) - parY) * .04;
-    setCam(YAW0 + .1 * Math.sin(tm * .23) + parX * .18, .34 + parY * .06);
+    const tracking = !!ptr && now < trackUntil;
+    /* 视角：鼠标设备跟着指针轻微偏转；手机上跟着机身倾斜转（拿不到陀螺仪就只做缓慢摆动） */
+    const px = hasTilt ? tiltX * .5 : FINE && ptr ? ptr[0] / W - .5 : 0, py = hasTilt ? tiltY * .5 : FINE && ptr ? ptr[1] / H - .5 : 0;
+    parX += (px - parX) * .05; parY += (py - parY) * .05;
+    setCam(YAW0 + .1 * Math.sin(tm * .23) + parX * (hasTilt ? .7 : .18), .34 + parY * (hasTilt ? .2 : .06));
     let lim = false;
     if (job) runJob(dt, solve(cur).tcp, now);
     else if (tracking) { const hit = aim(ptr[0], ptr[1]); if (hit) { const c = clampT(hit); tgt = c.p; lim = c.lim; } }
@@ -2195,27 +2297,56 @@ btnMusic.addEventListener('click', toggleMusic);
     trail.push(s.tcp); if (trail.length > 44) trail.shift();
     draw(s, lim);
     if (now - hudT > 90) { hudT = now; hud(s, lim, tracking); }
+    /* 连续掉到 30 帧以下就自动降画质：画布降到 1 倍像素、线条不再画光晕 */
+    if (!lite && tm > 3) { slow = dt > .034 ? slow + 1 : Math.max(0, slow - 1); if (slow > 45) { lite = true; fit(); } }
     raf = requestAnimationFrame(frame);
   }
   const run = () => { if (vis && !raf && !RM) { last = performance.now(); raf = requestAnimationFrame(frame); } };
   function fit() {
     const hr = hero.getBoundingClientRect(), sr = stage.getBoundingClientRect();
-    W = hr.width; H = hr.height; dpr = Math.min(FINE ? 2 : 1.5, devicePixelRatio || 1);
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    /* 窄屏时遥测面板贴在舞台底部，机械臂只用它上面的那块空间 */
+    /* 窄屏时遥测面板贴在舞台底部，机械臂只用它上面的那块空间；
+       画布也只盖住舞台上下各多出一截的区域，不用整个首屏那么大 */
     const stacked = sr.width > hr.width * .7, free = sr.height - (stacked ? hudBox.offsetHeight + 8 : 0);
-    ax = sr.left - hr.left + sr.width * .5; ay = sr.top - hr.top + free * (stacked ? .6 : .56);
-    S = clamp(Math.min(sr.width / 3.7, free / 3.3), 56, 200);
+    W = hr.width;
+    cvTop = stacked ? Math.max(0, sr.top - hr.top - 50) : 0;
+    H = stacked ? Math.min(hr.height - cvTop, sr.height + 150) : hr.height;
+    cv.style.top = cvTop + 'px'; cv.style.height = H + 'px';
+    dpr = Math.min(lite ? 1 : FINE ? 2 : 1.5, devicePixelRatio || 1);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ax = sr.left - hr.left + sr.width * .5; ay = sr.top - hr.top - cvTop + free * (stacked ? .6 : .56);
+    S = clamp(stacked ? Math.min(sr.width / 3.25, free / 3) : Math.min(sr.width / 3.7, free / 3.3), 56, 200);
     wide = sr.width > 430;
     if (RM) { setCam(YAW0, .34); const s = solve(cur); draw(s, false); hud(s, false, false); }
   }
-  hero.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; const r = hero.getBoundingClientRect(); ptr = [e.clientX - r.left, e.clientY - r.top]; lastPtr = performance.now(); }, { passive: true });
-  hero.addEventListener('pointerleave', () => { ptr = null; });
-  hero.addEventListener('pointerdown', e => { if (e.button === 0 && !e.target.closest('a, button, input, .card, .term')) startJob(true); }, { passive: true });
-  if (!FINE) $('#armHint').textContent = '机械臂正在自己码垛：三块料码成一摞，再拆回去；点一下空白处也能让它搬一块。逆解由原生 Canvas 实时计算。';
+  const local = e => { const r = hero.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top - cvTop]; };
+  hero.addEventListener('pointermove', e => {
+    if (e.pointerType === 'mouse') { ptr = local(e); trackUntil = performance.now() + 4200; }
+    else if (touching) { ptr = local(e); trackUntil = performance.now() + 2600; }
+  }, { passive: true });
+  hero.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') ptr = null; });
+  hero.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('a, button, input, .card, .term')) return;
+    if (e.pointerType === 'mouse') { startJob(true); return; }
+    /* 触屏：点哪儿，机械臂就够向哪儿（按住横向拖动会一直跟）；手头的料还没夹住就先放下 */
+    if (RM || !e.target.closest('.hero-stage')) return;
+    touching = true; ptr = local(e); trackUntil = performance.now() + 2600;
+    if (job && job.i < 2) { job = null; gripTo = 0; }
+  }, { passive: true });
+  const endTouch = () => { touching = false; };
+  addEventListener('pointerup', endTouch, { passive: true });
+  addEventListener('pointercancel', endTouch, { passive: true });
+  /* 手机倾斜 → 视角跟着转。iOS 要弹权限框才给数据，这里不去打扰，拿不到就算了 */
+  if (!FINE && !RM && 'DeviceOrientationEvent' in window && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+    addEventListener('deviceorientation', e => {
+      if (e.gamma == null || e.beta == null) return;
+      hasTilt = true; tiltX = clamp(e.gamma / 35, -1, 1); tiltY = clamp((e.beta - 50) / 35, -1, 1);
+    }, { passive: true });
+  }
+  if (!FINE) $('#armHint').textContent = '点一下机械臂旁边的空白，它会够向你点的位置；不碰它，它自己把三块料码成一摞再拆回去。';
   if (RM) $('#armHint').textContent = '首屏的机械臂是原生 Canvas 三维线框；已按系统设置关闭动画。';
   new ResizeObserver(fit).observe(hero);
-  new IntersectionObserver(es => { vis = es[0].isIntersecting; run(); }).observe(hero);
+  new ResizeObserver(fit).observe(stage);
+  new IntersectionObserver(es => { vis = es[0].isIntersecting; run(); }, { rootMargin: '60px 0px' }).observe(stage);
   fit();
 })();
 
